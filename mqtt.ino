@@ -19,7 +19,7 @@ const int servoPin = 21;
 int objectCount = 0;
 
 // IR Sensor pins for object detection (1-7) and special control (8-9)
-const int irPins[] = {13, 12, 14, 27, 2, 4, 16}; // IR Sensors 1-7
+const int irPins[] = {22, 23, 1, 25, 3, 18, 16}; // IR Sensors 1-7
 const int irControlPins[] = {17, 19}; // IR Sensors 8 and 9 for controlling object count and servo
 const int numSensors = sizeof(irPins) / sizeof(irPins[0]);
 const int numControlSensors = sizeof(irControlPins) / sizeof(irControlPins[0]);
