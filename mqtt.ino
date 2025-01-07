@@ -7,7 +7,7 @@ const char* ssid = "Jangnubburengnong";
 const char* password = "12345678";
 
 // MQTT Broker
-const char* mqtt_server = "test.mosquitto.org";
+const char* mqtt_server = "172.104.35.200"; // New MQTT server address
 
 // MQTT Client
 WiFiClient espClient;
@@ -16,13 +16,10 @@ PubSubClient client(espClient);
 // Servo setup
 Servo servo;
 const int servoPin = 21;
-int objectCount = 0;
 
-// IR Sensor pins for object detection (1-7) and special control (8-9)
-const int irPins[] = {22, 23, 1, 25, 3, 18, 16}; // IR Sensors 1-7
-const int irControlPins[] = {17, 19}; // IR Sensors 8 and 9 for controlling object count and servo
+// IR Sensor pins for object detection (1-10)
+const int irPins[] = {32, 14, 34, 15, 22, 18, 16, 17, 27, 13}; // IR Sensors 1-10
 const int numSensors = sizeof(irPins) / sizeof(irPins[0]);
-const int numControlSensors = sizeof(irControlPins) / sizeof(irControlPins[0]);
 
 // Topics
 String topics[] = {
@@ -33,8 +30,14 @@ String topics[] = {
   "kmitl/project/irsensor/5",
   "kmitl/project/irsensor/6",
   "kmitl/project/irsensor/7",
-  "kmitl/project/irsensor/count"
+  "kmitl/project/irsensor/8",
+  "kmitl/project/irsensor/9",  // Topic for sensor 9
+  "kmitl/project/irsensor/10"  // Topic for sensor 10
 };
+
+// Timer for servo control
+unsigned long servoStartTime = 0;
+bool servoActive = false;
 
 // Setup WiFi
 void setupWiFi() {
@@ -63,22 +66,14 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
   Serial.print(receivedTopic);
   Serial.print(", Message: ");
   Serial.println(receivedMessage);
-
-  // Update objectCount if the count topic is received
-  if (receivedTopic == "kmitl/project/irsensor/count") {
-    objectCount = receivedMessage.toInt(); // Update objectCount
-    Serial.print("Updated objectCount: ");
-    Serial.println(objectCount);
-  }
 }
 
 // Reconnect to MQTT Broker
 void reconnect() {
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (client.connect("khim/ngai/za")) {
+    if (client.connect("koson")) { // Use "koson" as client name
       Serial.println("Connected to MQTT Broker");
-      client.subscribe("kmitl/project/irsensor/count"); // Subscribe to count topic
     } else {
       Serial.print("Failed with state ");
       Serial.println(client.state());
@@ -87,20 +82,12 @@ void reconnect() {
   }
 }
 
-unsigned long servoStartTime = 0;
-bool servoActive = false;
-
 void setup() {
   Serial.begin(115200);
 
-  // Setup pins for IR sensors 1-7
+  // Setup pins for IR sensors 1-10
   for (int i = 0; i < numSensors; i++) {
     pinMode(irPins[i], INPUT);
-  }
-
-  // Setup pins for IR sensors 8 and 9 (Control Sensors)
-  for (int i = 0; i < numControlSensors; i++) {
-    pinMode(irControlPins[i], INPUT);
   }
 
   // Setup servo
@@ -119,7 +106,7 @@ void loop() {
   }
   client.loop();
 
-  // Handle object detection with IR sensors 1-7
+  // Handle object detection with IR sensors 1-10
   for (int i = 0; i < numSensors; i++) {
     int irState = digitalRead(irPins[i]);
     String message = String(irState == LOW ? 1 : 0); // Send 1 when LOW (object detected), 0 when HIGH (no object)
@@ -135,42 +122,19 @@ void loop() {
     delay(100);
   }
 
-  // Handle control sensors (8 and 9) for servo and object count logic
-  for (int i = 0; i < numControlSensors; i++) {
-    int irControlState = digitalRead(irControlPins[i]);
-
-    if (i == 0 && irControlState == LOW && !servoActive) { // IR Sensor 8 with Servo
-      servo.write(90); // Raise the servo
-      servoStartTime = millis(); // Record the start time
-      servoActive = true; // Indicate that the servo is active
-      objectCount++;
-      client.publish(topics[8].c_str(), String(objectCount).c_str()); // Publish the object count to MQTT
-
-      // Display the object count
-      Serial.print("Object Count (increment): ");
-      Serial.println(objectCount);
-
-      delay(500); // Adding a small delay to avoid repetitive triggering
-    }
-
-    if (i == 1 && irControlState == LOW) { // IR Sensor 9 for decrementing object count
-      if (objectCount > 0) {
-        objectCount--;
-      }
-      client.publish(topics[8].c_str(), String(objectCount).c_str()); // Publish the object count to MQTT
-
-      // Display the object count
-      Serial.print("Object Count (decrement): ");
-      Serial.println(objectCount);
-
-      delay(500); // Adding a small delay to avoid repetitive triggering
-    }
+  // IR Sensor 8 controls the servo
+  int irStateSensor8 = digitalRead(irPins[7]); // Sensor 8 is at index 7 in the array
+  if (irStateSensor8 == LOW && !servoActive) {
+    servo.write(90); // Raise the servo
+    servoStartTime = millis(); // Start the timer
+    servoActive = true; // Set servo as active
+    Serial.println("Servo raised to 90 degrees.");
   }
 
-  // Check the time and return the servo to its original position after 5 seconds
-  if (servoActive && (millis() - servoStartTime >= 5000)) {
-    servo.write(0); // Return the servo to the original position
-    servoActive = false; // Deactivate the servo
-    Serial.println("Servo returned to original position.");
+  // Return servo to initial position after 5 seconds
+  if (servoActive && millis() - servoStartTime >= 5000) {
+    servo.write(0); // Lower the servo
+    servoActive = false; // Reset servo state
+    Serial.println("Servo returned to initial position.");
   }
 }
