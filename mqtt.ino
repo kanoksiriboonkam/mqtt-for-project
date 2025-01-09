@@ -3,8 +3,8 @@
 #include <ESP32Servo.h>
 
 // WiFi Credentials
-const char* ssid = "Jangnubburengnong";
-const char* password = "12345678";
+const char* ssid = "Khim";
+const char* password = "123456789";
 
 // MQTT Broker
 const char* mqtt_server = "172.104.35.200"; // New MQTT server address
@@ -123,8 +123,8 @@ void loop() {
   }
 
   // IR Sensor 8 controls the servo
-  int irStateSensor8 = digitalRead(irPins[7]); // Sensor 8 is at index 7 in the array
-  if (irStateSensor8 == LOW && !servoActive) {
+  int irStateSensor9 = digitalRead(irPins[8]); // Sensor 8 is at index 7 in the array
+  if (irStateSensor9 == LOW && !servoActive) {
     servo.write(90); // Raise the servo
     servoStartTime = millis(); // Start the timer
     servoActive = true; // Set servo as active
