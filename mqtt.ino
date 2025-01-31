@@ -7,7 +7,7 @@ const char* ssid = "Khim";
 const char* password = "123456789";
 
 // MQTT Broker
-const char* mqtt_server = "172.104.35.200"; // New MQTT server address
+const char* mqtt_server = "test.mosquitto.org"; // New MQTT server address
 
 // MQTT Client
 WiFiClient espClient;
@@ -72,7 +72,7 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (client.connect("koson")) { // Use "koson" as client name
+    if (client.connect("test.mosquitto.org")) { // Use "koson" as client name
       Serial.println("Connected to MQTT Broker");
     } else {
       Serial.print("Failed with state ");
