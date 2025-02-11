@@ -7,7 +7,7 @@ const char* ssid = "Khim";
 const char* password = "123456789";
 
 // MQTT Broker
-const char* mqtt_server = "test.mosquitto.org"; // New MQTT server address
+const char* mqtt_server = "test.mosquitto.org";
 
 // MQTT Client
 WiFiClient espClient;
@@ -31,8 +31,8 @@ String topics[] = {
   "kmitl/project/irsensor/6",
   "kmitl/project/irsensor/7",
   "kmitl/project/irsensor/8",
-  "kmitl/project/irsensor/9",  // Topic for sensor 9
-  "kmitl/project/irsensor/10"  // Topic for sensor 10
+  "kmitl/project/irsensor/9",
+  "kmitl/project/irsensor/10"
 };
 
 // Timer for servo control
@@ -72,8 +72,13 @@ void mqttCallback(char* topic, byte* payload, unsigned int length) {
 void reconnect() {
   while (!client.connected()) {
     Serial.println("Connecting to MQTT...");
-    if (client.connect("test.mosquitto.org")) { // Use "koson" as client name
+    if (client.connect("ESP32_Client")) {
       Serial.println("Connected to MQTT Broker");
+      
+      // Subscribe to all topics
+      for (int i = 0; i < numSensors; i++) {
+        client.subscribe(topics[i].c_str());
+      }
     } else {
       Serial.print("Failed with state ");
       Serial.println(client.state());
@@ -119,11 +124,10 @@ void loop() {
 
     // Publish sensor data via MQTT
     client.publish(topics[i].c_str(), message.c_str());
-    delay(100);
   }
 
-  // IR Sensor 8 controls the servo
-  int irStateSensor9 = digitalRead(irPins[8]); // Sensor 8 is at index 7 in the array
+  // IR Sensor 9 controls the servo
+  int irStateSensor9 = digitalRead(irPins[8]); // Sensor 9 is at index 8 in the array
   if (irStateSensor9 == LOW && !servoActive) {
     servo.write(90); // Raise the servo
     servoStartTime = millis(); // Start the timer
@@ -137,4 +141,6 @@ void loop() {
     servoActive = false; // Reset servo state
     Serial.println("Servo returned to initial position.");
   }
+
+  delay(100); // Ensure loop stability
 }
