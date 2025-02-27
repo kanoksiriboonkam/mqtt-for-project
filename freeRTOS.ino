@@ -46,7 +46,6 @@ void setupWiFi() {
     delay(1000);
     Serial.print(".");
   }
-  
   Serial.println("\nWiFi connected");
 }
 
@@ -109,18 +108,23 @@ void irSensorTask(void* parameter) {
 void servoTask(void* parameter) {
   while (1) {
     int irStateSensor9 = digitalRead(irPins[8]); // Sensor 9 is at index 8
-    if (irStateSensor9 == LOW && !servoActive) {
-      servo.write(90); // Raise the servo
-      servoStartTime = millis();
-      servoActive = true;
-      Serial.println("Servo raised to 90 degrees.");
+    Serial.printf("IR Sensor 9 State: %d\n", irStateSensor9);
+    
+    if (irStateSensor9 == LOW) { // Object detected
+      if (!servoActive) {
+        servo.write(90); // Move servo to 90 degrees
+        servoActive = true;
+        servoStartTime = millis();
+        Serial.println("Servo raised to 90 degrees and holding.");
+      }
+    } else { // No object detected
+      if (servoActive && millis() - servoStartTime >= 5000) {
+        servo.write(0); // Move servo back to 0 degrees
+        servoActive = false;
+        Serial.println("Servo returned to initial position (0 degrees). ");
+      }
     }
-    if (servoActive && millis() - servoStartTime >= 5000) {
-      servo.write(0); // Lower the servo
-      servoActive = false;
-      Serial.println("Servo returned to initial position.");
-    }
-    vTaskDelay(100 / portTICK_PERIOD_MS);
+    vTaskDelay(200 / portTICK_PERIOD_MS);
   }
 }
 
