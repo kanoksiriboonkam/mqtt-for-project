@@ -16,7 +16,7 @@ PubSubClient client(espClient);
 const int irPins[] = {32, 14, 34, 15, 22, 18, 16, 17, 27, 13}; // IR Sensors
 const int numSensors = sizeof(irPins) / sizeof(irPins[0]);
 
-// MQTT Topics for sensors 9 - 18
+// MQTT Topics for sensors 29 - 38
 String topics[] = {
   "kmitl/project/irsensor/29",
   "kmitl/project/irsensor/30",
